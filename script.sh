@@ -19,8 +19,8 @@ h
 unalias h
 pwd
 cp fil1 doc2
-mv doc2 copied-version
+mv doc2 copyy
 cd ..
-rm -rf anything
+rm -rf fil1
 
 vim myscript.sh
