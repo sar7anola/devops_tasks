@@ -1,0 +1,51 @@
+version: "3.9"
+
+name: ${COMPOSE_PROJECT_NAME}-dev
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: ${COMPOSE_PROJECT_NAME}-mysql
+    command: ["--default-authentication-plugin=mysql_native_password", "--lower_case_table_names=1"]
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "${MYSQL_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  petclinic:
+    image: ${PETCLINIC_IMAGE}:${PETCLINIC_TAG_DEV}
+    container_name: ${COMPOSE_PROJECT_NAME}-app-dev
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${APP_PORT}:8080"
+    # mount local target/ for hot-reload of the built jar if you prefer (optional)
+    volumes:
+      - type: volume
+        source: logs
+        target: /app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  mysql_data:
+  logs:
