@@ -1,0 +1,70 @@
+
+
+services:
+  petclinic-app:
+    build: .
+    container_name: petclinic-app
+    ports:
+      - "30082:9966"
+    environment:
+      - SPRING_PROFILES_ACTIVE=h2
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:8.0
+    container_name: petclinic-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: petclinic
+    ports:
+      - "33060:3306"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "30090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+  nexus:
+    image: sonatype/nexus3:latest
+    container_name: nexus
+    ports:
+      - "30092:8081"
+      - "5000:5000"
+    volumes:
+      - nexus-data:/nexus-data
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "30091:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
+  
+
+  sonarqube:
+    image: sonarqube:latest
+    container_name: sonarqube
+    ports:
+      - "30093:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-logs:/opt/sonarqube/logs
+      - sonarqube-extensions:/opt/sonarqube/extensions
+
+volumes:
+  grafana-data:
+  nexus-data:
+  sonarqube-data:
+  sonarqube-logs:
+  sonarqube-extensions:
